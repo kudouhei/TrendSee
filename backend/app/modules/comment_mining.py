@@ -11,7 +11,7 @@ from typing import Dict, List
 import jieba
 from loguru import logger
 
-from app.agents import AGENT_REGISTRY
+from app.agents import AGENT_REGISTRY, default_agent_kwargs
 from app.analysis.sentiment import analyze_sentiment
 from app.analysis.ai_engine import _chat
 from app.core.database import AsyncSessionLocal
@@ -36,6 +36,8 @@ class CommentMiningModule:
         **agent_kwargs,
     ) -> Dict:
         logger.info(f"[CommentMining] topic={topic} platforms={platforms}")
+
+        agent_kwargs = {**default_agent_kwargs(), **agent_kwargs}
 
         # ── Collect posts about the topic ─────────────────────────────────────
         all_items = []

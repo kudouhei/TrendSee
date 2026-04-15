@@ -150,6 +150,31 @@ export default function Settings() {
         </p>
       </div>
 
+      {/* Platform cookies */}
+      <div className="card space-y-4">
+        <h3 className="text-sm font-semibold text-gray-900">平台 Cookie（获取真实数据必须）</h3>
+        <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          ⚠️ 未配置 Cookie 时，小红书和抖音将返回占位测试数据，不是真实热点内容。
+        </p>
+        <div className="space-y-0">
+          <ConfigRow
+            envKey="XHS_COOKIE"
+            desc="小红书登录 Cookie — 浏览器 DevTools → Application → Cookies → xiaohongshu.com，复制全部"
+            required={false}
+          />
+          <ConfigRow
+            envKey="DOUYIN_COOKIE"
+            desc="抖音登录 Cookie — 浏览器 DevTools → Application → Cookies → douyin.com，复制全部"
+            required={false}
+          />
+        </div>
+        <div className="bg-gray-900 rounded-xl p-4 border border-gray-200">
+          <p className="text-gray-400 text-xs mb-2">在 <code className="text-brand-400">.env</code> 中配置：</p>
+          <pre className="text-xs text-green-400 leading-relaxed whitespace-pre-wrap">{`XHS_COOKIE=a1=xxx; web_session=xxx; ...
+DOUYIN_COOKIE=s_v_web_id=xxx; msToken=xxx; ...`}</pre>
+        </div>
+      </div>
+
       {/* Other keys */}
       <div className="card space-y-4">
         <h3 className="text-sm font-semibold text-gray-900">其他 API 密钥</h3>
@@ -190,10 +215,10 @@ export default function Settings() {
       <div className="card">
         <h3 className="text-sm font-semibold text-gray-900 mb-3">数据源说明</h3>
         <div className="space-y-3 text-xs text-gray-500">
-          <p>• <span className="text-red-600 font-medium">小红书</span>：通过 Playwright 无头浏览器抓取，建议配置 Cookie 提升稳定性</p>
-          <p>• <span className="text-gray-700 font-medium">抖音</span>：抓取公开热榜页面，建议配置 Cookie</p>
-          <p>• <span className="text-orange-600 font-medium">Reddit</span>：优先使用 PRAW 官方 API，无 Key 时降级为公开 JSON API</p>
-          <p>• <span className="text-blue-600 font-medium">Google Trends</span>：使用 pytrends 库，无需密钥，注意请求频率限制</p>
+          <p>• <span className="text-red-600 font-medium">小红书</span>：Playwright 无头浏览器 + XHR 拦截。<strong className="text-gray-700">必须配置 XHS_COOKIE</strong>，否则触发登录墙，返回测试数据</p>
+          <p>• <span className="text-gray-700 font-medium">抖音</span>：直接调用抖音热搜 API（<code>aweme/v1/hot/search/list</code>）。<strong className="text-gray-700">建议配置 DOUYIN_COOKIE</strong>，否则热榜数据可能为空</p>
+          <p>• <span className="text-orange-600 font-medium">Reddit</span>：优先使用 PRAW 官方 API，无 Key 时降级为公开 JSON API，无需登录</p>
+          <p>• <span className="text-blue-600 font-medium">Google Trends</span>：pytrends 库，无需密钥，注意请求频率限制（建议间隔 &gt;5 分钟）</p>
         </div>
       </div>
     </div>

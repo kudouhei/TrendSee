@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     REDDIT_CLIENT_SECRET: str = ""
     REDDIT_USER_AGENT: str = "TrendSee/1.0"
 
+    # Platform cookies (required for real data from XHS / Douyin)
+    # Copy from browser DevTools → Application → Cookies after logging in.
+    XHS_COOKIE: str = ""
+    DOUYIN_COOKIE: str = ""
+
     # Proxy
     HTTP_PROXY: str = ""
     HTTPS_PROXY: str = ""

@@ -13,7 +13,7 @@ from loguru import logger
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agents import AGENT_REGISTRY
+from app.agents import AGENT_REGISTRY, default_agent_kwargs
 from app.analysis.engagement import score_engagement
 from app.analysis.sentiment import analyze_sentiment
 from app.analysis.lifecycle import classify_single_item
@@ -51,9 +51,13 @@ class TrendRadarModule:
             f"| date_range={date_from}~{date_to}"
         )
 
+        # Merge cookies from .env so agents can authenticate automatically.
+        merged_kwargs = {**default_agent_kwargs(), **agent_kwargs}
+
         # When a date range is given, pass it as a timeframe hint to Google Trends.
         if is_date_range:
-            agent_kwargs.setdefault("timeframe", f"{date_from} {date_to}")
+            merged_kwargs.setdefault("timeframe", f"{date_from} {date_to}")
+        agent_kwargs = merged_kwargs
 
         # ── 1. Collect ────────────────────────────────────────────────────────
         all_items = []

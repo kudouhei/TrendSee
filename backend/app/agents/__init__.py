@@ -10,4 +10,24 @@ AGENT_REGISTRY = {
     "douyin": DouyinAgent,
 }
 
-__all__ = ["RedditAgent", "GoogleTrendsAgent", "XHSAgent", "DouyinAgent", "AGENT_REGISTRY"]
+
+def default_agent_kwargs() -> dict:
+    """Return platform-level kwargs populated from environment / .env config.
+
+    Each module should merge these into the kwargs it passes to safe_fetch so
+    that cookies are automatically available without having to thread them
+    through every API call.
+    """
+    from app.core.config import settings
+    kwargs: dict = {}
+    if settings.XHS_COOKIE:
+        kwargs["xhs_cookie"] = settings.XHS_COOKIE
+    if settings.DOUYIN_COOKIE:
+        kwargs["douyin_cookie"] = settings.DOUYIN_COOKIE
+    return kwargs
+
+
+__all__ = [
+    "RedditAgent", "GoogleTrendsAgent", "XHSAgent", "DouyinAgent",
+    "AGENT_REGISTRY", "default_agent_kwargs",
+]
