@@ -16,10 +16,14 @@ router = APIRouter()
 # ── Request schemas ────────────────────────────────────────────────────────────
 
 class TrendRadarRequest(BaseModel):
-    keywords: List[str] = ["AI", "新消费", "出海"]
+    keywords: List[str] = []
     platforms: List[str] = ["xhs", "douyin", "reddit", "google_trends"]
     period: str = "weekly"
     limit_per_source: int = 30
+    # Optional date range mode — when provided, overrides `period` and fetches
+    # hot topics for the given date window (YYYY-MM-DD).
+    date_from: Optional[str] = None
+    date_to: Optional[str] = None
 
 class CommentMiningRequest(BaseModel):
     topic: str
@@ -145,6 +149,8 @@ async def trigger_trend_radar(req: TrendRadarRequest, background_tasks: Backgrou
         keywords=req.keywords,
         platforms=req.platforms,
         period=req.period,
+        date_from=req.date_from,
+        date_to=req.date_to,
     )
     return {"task_id": task.id, "status": "queued", "module": "trend_radar"}
 
@@ -185,6 +191,8 @@ async def run_trend_radar_now(req: TrendRadarRequest):
         platforms=req.platforms,
         period=req.period,
         limit_per_source=req.limit_per_source,
+        date_from=req.date_from,
+        date_to=req.date_to,
     )
     return result
 

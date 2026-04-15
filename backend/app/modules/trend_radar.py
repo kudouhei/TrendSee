@@ -29,15 +29,31 @@ class TrendRadarModule:
         self,
         keywords: List[str],
         platforms: List[str],
-        period: str = "weekly",   # weekly | monthly
+        period: str = "weekly",   # weekly | monthly | custom
         limit_per_source: int = 30,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
         **agent_kwargs,
     ) -> Dict:
         """
         Full pipeline: collect → analyse → aggregate → narrate → persist.
+        When date_from/date_to are provided, period is treated as "custom" and
+        keywords default to [] so each platform fetches its current hot-list.
         Returns the report dict.
         """
-        logger.info(f"[TrendRadar] Starting run | period={period} | keywords={keywords}")
+        is_date_range = bool(date_from and date_to)
+        if is_date_range:
+            period = "custom"
+            keywords = keywords or []
+
+        logger.info(
+            f"[TrendRadar] Starting run | period={period} | keywords={keywords} "
+            f"| date_range={date_from}~{date_to}"
+        )
+
+        # When a date range is given, pass it as a timeframe hint to Google Trends.
+        if is_date_range:
+            agent_kwargs.setdefault("timeframe", f"{date_from} {date_to}")
 
         # ── 1. Collect ────────────────────────────────────────────────────────
         all_items = []
@@ -116,7 +132,7 @@ class TrendRadarModule:
         ]
 
         # ── 5. AI narrative ───────────────────────────────────────────────────
-        period_label = self._period_label(period)
+        period_label = self._period_label(period, date_from, date_to)
         narrative = await generate_report_narrative(
             module="趋势雷达",
             period_label=period_label,
@@ -175,7 +191,13 @@ class TrendRadarModule:
             return report.id
 
     @staticmethod
-    def _period_label(period: str) -> str:
+    def _period_label(
+        period: str,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+    ) -> str:
+        if period == "custom" and date_from and date_to:
+            return f"{date_from} ~ {date_to}"
         now = datetime.utcnow()
         if period == "weekly":
             week = now.isocalendar()[1]

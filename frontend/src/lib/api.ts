@@ -102,6 +102,8 @@ export const runTrendRadar = (payload: {
   platforms: string[];
   period: string;
   limit_per_source: number;
+  date_from?: string;
+  date_to?: string;
 }) => api.post<Report>("/modules/trend-radar/run-now", payload).then((r) => r.data);
 
 export const runCommentMining = (payload: {

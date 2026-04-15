@@ -17,8 +17,22 @@ const TOOLTIP_STYLE = {
   itemStyle: { color: "#111827" },
 };
 
+type InputMode = "keyword" | "date_range";
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+function sevenDaysAgo() {
+  const d = new Date();
+  d.setDate(d.getDate() - 7);
+  return d.toISOString().slice(0, 10);
+}
+
 export default function TrendRadar() {
+  const [inputMode, setInputMode] = useState<InputMode>("keyword");
   const [keywords, setKeywords] = useState(DEFAULT_KEYWORDS.join(", "));
+  const [dateFrom, setDateFrom] = useState(sevenDaysAgo());
+  const [dateTo, setDateTo]     = useState(todayStr());
   const [platforms, setPlatforms] = useState<string[]>(ALL_PLATFORMS);
   const [period, setPeriod] = useState("weekly");
   const [result, setResult] = useState<any>(null);
@@ -31,13 +45,25 @@ export default function TrendRadar() {
   const togglePlatform = (p: string) =>
     setPlatforms((prev) => prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]);
 
-  const handleRun = () =>
-    mutate({
-      keywords: keywords.split(",").map((k) => k.trim()).filter(Boolean),
-      platforms,
-      period,
-      limit_per_source: 20,
-    });
+  const handleRun = () => {
+    if (inputMode === "keyword") {
+      mutate({
+        keywords: keywords.split(",").map((k) => k.trim()).filter(Boolean),
+        platforms,
+        period,
+        limit_per_source: 20,
+      });
+    } else {
+      mutate({
+        keywords: [],
+        platforms,
+        period: "custom",
+        limit_per_source: 20,
+        date_from: dateFrom,
+        date_to: dateTo,
+      });
+    }
+  };
 
   const phaseData = result
     ? Object.entries(result.phase_distribution || {}).map(([k, v]) => ({
@@ -60,16 +86,71 @@ export default function TrendRadar() {
       {/* Config */}
       <div className="card space-y-4">
         <h3 className="text-sm font-semibold text-gray-900">配置参数</h3>
-        <div>
-          <label className="text-xs text-gray-500 mb-1.5 block">关键词（逗号分隔）</label>
-          <input
-            value={keywords}
-            onChange={(e) => setKeywords(e.target.value)}
-            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900
-                       focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-colors"
-            placeholder="AI, 新消费, 出海..."
-          />
+
+        {/* Input mode toggle */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500 mr-1">输入方式：</span>
+          {(["keyword", "date_range"] as InputMode[]).map((m) => (
+            <button
+              key={m}
+              onClick={() => setInputMode(m)}
+              className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
+                inputMode === m
+                  ? "bg-brand-50 text-brand-700 border-brand-200 font-medium"
+                  : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+              }`}
+            >
+              {m === "keyword" ? "🔍 关键词" : "📅 日期范围"}
+            </button>
+          ))}
         </div>
+
+        {/* Keyword input */}
+        {inputMode === "keyword" && (
+          <div>
+            <label className="text-xs text-gray-500 mb-1.5 block">
+              关键词（逗号分隔，留空则采集各平台实时热榜）
+            </label>
+            <input
+              value={keywords}
+              onChange={(e) => setKeywords(e.target.value)}
+              className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900
+                         focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-colors"
+              placeholder="AI, 新消费, 出海…（留空获取各平台热榜）"
+            />
+          </div>
+        )}
+
+        {/* Date range input */}
+        {inputMode === "date_range" && (
+          <div>
+            <label className="text-xs text-gray-500 mb-1.5 block">
+              日期范围（自动采集各平台热点，无需输入关键词）
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900
+                           focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-colors"
+              />
+              <span className="text-gray-400 text-xs">至</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900
+                           focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-colors"
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1.5">
+              将采集所选平台当前热榜，并使用日期范围作为 Google Trends 分析时间窗口
+            </p>
+          </div>
+        )}
+
+        {/* Platforms */}
         <div className="flex flex-wrap gap-2">
           {ALL_PLATFORMS.map((p) => (
             <button
@@ -85,23 +166,34 @@ export default function TrendRadar() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-3">
-          <label className="text-xs text-gray-500">周期：</label>
-          {["weekly", "monthly"].map((v) => (
-            <button
-              key={v}
-              onClick={() => setPeriod(v)}
-              className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
-                period === v
-                  ? "bg-brand-50 text-brand-700 border-brand-200"
-                  : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              {v === "weekly" ? "每周" : "每月"}
-            </button>
-          ))}
-          <RunButton onClick={handleRun} loading={isPending} className="ml-auto" />
-        </div>
+
+        {/* Period (only shown in keyword mode) */}
+        {inputMode === "keyword" && (
+          <div className="flex items-center gap-3">
+            <label className="text-xs text-gray-500">周期：</label>
+            {["weekly", "monthly"].map((v) => (
+              <button
+                key={v}
+                onClick={() => setPeriod(v)}
+                className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
+                  period === v
+                    ? "bg-brand-50 text-brand-700 border-brand-200"
+                    : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                {v === "weekly" ? "每周" : "每月"}
+              </button>
+            ))}
+            <RunButton onClick={handleRun} loading={isPending} className="ml-auto" />
+          </div>
+        )}
+
+        {/* Run button for date range mode */}
+        {inputMode === "date_range" && (
+          <div className="flex justify-end">
+            <RunButton onClick={handleRun} loading={isPending} />
+          </div>
+        )}
       </div>
 
       {/* Results */}
