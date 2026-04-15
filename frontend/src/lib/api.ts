@@ -127,7 +127,10 @@ export const runVerticalDeep = (payload: {
 }) => api.post("/modules/vertical-deep/run-now", payload).then((r) => r.data);
 
 export const generateContent = (reportId: number, outputPlatforms: string[]) =>
-  api.post("/content/generate", { report_id: reportId, output_platforms: outputPlatforms }).then((r) => r.data);
+  api.post("/content/generate", { report_id: reportId, output_platforms: outputPlatforms }, { timeout: 180000 }).then((r) => r.data);
+
+export const regenerateNarrative = (reportId: number) =>
+  api.post(`/reports/${reportId}/regenerate-narrative`, {}, { timeout: 120000 }).then((r) => r.data);
 
 export const triggerCollect = (platform: string, keyword = "", limit = 50) =>
   api.post("/collect", { platform, keyword, limit }).then((r) => r.data);

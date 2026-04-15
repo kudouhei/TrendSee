@@ -21,6 +21,42 @@ from app.analysis.ai_engine import generate_report_narrative
 from app.models import RawTrendItem, TrendAnalysis, TrendReport
 from app.core.database import AsyncSessionLocal
 
+# Common English function words that jieba produces when tokenizing
+# Reddit / Google Trends titles — not useful as trend signals.
+_EN_STOPWORDS = {
+    "the","a","an","and","or","but","in","on","at","to","for","of","with",
+    "by","from","is","was","are","were","be","been","has","have","had",
+    "do","does","did","will","would","could","should","may","might","can",
+    "it","its","this","that","these","those","as","if","so","not","no",
+    "up","out","about","after","before","over","more","into","than",
+    "he","she","they","we","you","i","his","her","their","our","my","your",
+    "us","him","them","new","says","said","say","all","how","what","who",
+    "why","when","where","which","just","also","first","last","get","got",
+}
+
+
+def _is_valid_topic_word(w: str) -> bool:
+    """Keep a jieba token only if it looks like a meaningful topic signal.
+
+    Rules:
+    - At least 2 characters
+    - Contains at least one CJK character  OR  is a short uppercase acronym
+      (e.g. "AI", "NFT", "CEO") or a multi-char proper noun not in the
+      English stopword list.
+    """
+    if len(w) < 2:
+        return False
+    has_cjk = any("\u4e00" <= c <= "\u9fff" for c in w)
+    if has_cjk:
+        return True
+    # Allow short uppercase acronyms like AI, GPT, NFT
+    if w.isupper() and len(w) <= 5:
+        return True
+    # Allow longer mixed-case proper nouns not in stopwords
+    if len(w) >= 4 and w.lower() not in _EN_STOPWORDS:
+        return True
+    return False
+
 
 class TrendRadarModule:
     MODULE_NAME = "trend_radar"
@@ -99,7 +135,7 @@ class TrendRadarModule:
         for a in analysed:
             words = list(jieba.cut(a["item"].title))
             for w in words:
-                if len(w) >= 2:
+                if _is_valid_topic_word(w):
                     topic_counter[w] += a["virality_score"]
 
         top_topics = sorted(topic_counter.items(), key=lambda x: x[1], reverse=True)[:20]

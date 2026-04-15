@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getReports, getReport, getReportContent, generateContent } from "../lib/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getReports, getReport, getReportContent, generateContent, regenerateNarrative } from "../lib/api";
 import { MODULE_META, formatDate } from "../lib/utils";
 import ReportCard from "../components/ReportCard";
 import RunButton from "../components/RunButton";
@@ -8,9 +8,12 @@ import RunButton from "../components/RunButton";
 const MODULES = ["all", "trend_radar", "comment_mining", "viral_anatomy", "vertical_deep"];
 
 export default function Reports() {
+  const queryClient = useQueryClient();
   const [activeModule, setActiveModule] = useState("all");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [genStatus, setGenStatus] = useState<"idle" | "success" | "error">("idle");
+  const [regenNarrative, setRegenNarrative] = useState(false);
 
   const { data: reports = [], isLoading } = useQuery({
     queryKey: ["reports", activeModule],
@@ -30,11 +33,28 @@ export default function Reports() {
     enabled: !!selectedId,
   });
 
+  const handleRegenNarrative = async () => {
+    if (!selectedId) return;
+    setRegenNarrative(true);
+    try {
+      await regenerateNarrative(selectedId);
+      await queryClient.invalidateQueries({ queryKey: ["report", selectedId] });
+    } finally {
+      setRegenNarrative(false);
+    }
+  };
+
   const handleGenerate = async () => {
     if (!selectedId) return;
     setGenerating(true);
+    setGenStatus("idle");
     try {
       await generateContent(selectedId, ["xhs", "wechat"]);
+      // Refresh the content list so the newly generated items appear immediately.
+      await queryClient.invalidateQueries({ queryKey: ["report-content", selectedId] });
+      setGenStatus("success");
+    } catch {
+      setGenStatus("error");
     } finally {
       setGenerating(false);
     }
@@ -94,18 +114,45 @@ export default function Reports() {
                   <h2 className="text-gray-900 font-semibold">{detail.title}</h2>
                   <p className="text-gray-400 text-xs mt-1">{formatDate(detail.created_at)}</p>
                 </div>
-                <RunButton
-                  label="生成内容"
-                  onClick={handleGenerate}
-                  loading={generating}
-                  className="shrink-0"
-                />
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <RunButton
+                    label="生成内容"
+                    onClick={handleGenerate}
+                    loading={generating}
+                  />
+                  {genStatus === "success" && (
+                    <span className="text-xs text-green-600 bg-green-50 border border-green-200 rounded-lg px-2 py-1">
+                      ✓ 生成成功
+                    </span>
+                  )}
+                  {genStatus === "error" && (
+                    <span className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-2 py-1">
+                      ✗ 生成失败，请重试
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {detail.executive_summary && (
+              {detail.executive_summary ? (
                 <div className="bg-slate-50 rounded-xl p-4 mb-4 border border-gray-100">
                   <p className="text-gray-400 text-xs mb-1">执行摘要</p>
                   <p className="text-gray-700 text-sm leading-relaxed">{detail.executive_summary}</p>
+                </div>
+              ) : (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 flex items-start gap-3">
+                  <span className="text-amber-500 text-sm mt-0.5">⚠️</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-amber-700 text-sm font-medium">AI 解读未生成</p>
+                    <p className="text-amber-600 text-xs mt-0.5">可能是 AI API 超时或返回格式错误，点击重新生成。</p>
+                  </div>
+                  <button
+                    onClick={handleRegenNarrative}
+                    disabled={regenNarrative}
+                    className="shrink-0 text-xs px-3 py-1.5 rounded-lg border border-amber-300 bg-white text-amber-700
+                               hover:bg-amber-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {regenNarrative ? "生成中…" : "重新生成"}
+                  </button>
                 </div>
               )}
 

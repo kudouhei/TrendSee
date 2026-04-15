@@ -225,6 +225,36 @@ async def run_vertical_deep_now(req: VerticalDeepRequest):
     )
 
 
+# ── Re-generate AI narrative for an existing report ───────────────────────────
+
+@router.post("/reports/{report_id}/regenerate-narrative")
+async def regenerate_narrative(report_id: int, db: AsyncSession = Depends(get_db)):
+    """Re-run the AI narrative step for a report whose executive_summary is missing."""
+    from app.analysis.ai_engine import generate_report_narrative
+
+    r = (await db.execute(select(TrendReport).where(TrendReport.id == report_id))).scalar_one_or_none()
+    if not r:
+        raise HTTPException(404, "Report not found")
+
+    narrative = await generate_report_narrative(
+        module=r.module,
+        period_label=r.period_label or "",
+        top_topics=(r.top_topics or [])[:10],
+        engagement_stats={"total_items": r.total_items},
+        platform_breakdown=(r.trend_chart_data or {}).get("platform_breakdown", {}),
+    )
+
+    r.executive_summary = narrative.get("executive_summary", "")
+    r.deep_insights = narrative.get("deep_insights", [])
+    await db.commit()
+
+    return {
+        "report_id": report_id,
+        "executive_summary": r.executive_summary,
+        "deep_insights": r.deep_insights,
+    }
+
+
 # ── Content generation ────────────────────────────────────────────────────────
 
 @router.post("/content/generate")
