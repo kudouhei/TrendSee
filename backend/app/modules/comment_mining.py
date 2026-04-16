@@ -91,7 +91,8 @@ class CommentMiningModule:
             "ai_insights": insights,
         }
 
-        await self._persist(topic, result)
+        report_id = await self._persist(topic, result)
+        result["report_id"] = report_id
         return result
 
     async def _ai_mine(self, topic: str, titles: List[str], sentiments: List[Dict]) -> Dict:
@@ -134,7 +135,7 @@ class CommentMiningModule:
         except Exception:
             return {"audience_attitude": "", "content_opportunities": []}
 
-    async def _persist(self, topic: str, result: Dict) -> int:
+    async def _persist(self, topic: str, result: Dict) -> int:  # noqa: return type
         async with AsyncSessionLocal() as db:
             report = TrendReport(
                 module=self.MODULE_NAME,

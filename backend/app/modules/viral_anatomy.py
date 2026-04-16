@@ -90,7 +90,8 @@ class ViralAnatomyModule:
             "anatomy": anatomy,
         }
 
-        await self._persist(topic, result)
+        report_id = await self._persist(topic, result)
+        result["report_id"] = report_id
         return result
 
     def _extract_title_patterns(self, titles: List[str]) -> List[Dict]:

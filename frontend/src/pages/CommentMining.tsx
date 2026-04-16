@@ -6,6 +6,7 @@ import {
 import { runCommentMining } from "../lib/api";
 import { PLATFORM_LABELS } from "../lib/utils";
 import RunButton from "../components/RunButton";
+import ContentGeneratorPanel from "../components/ContentGeneratorPanel";
 
 const SENTIMENT_COLORS: Record<string, string> = {
   positive: "#16a34a",
@@ -145,6 +146,9 @@ export default function CommentMining() {
               </div>
             </div>
           </div>
+
+          {/* Content generation */}
+          <ContentGeneratorPanel reportId={result.report_id} />
 
           {/* AI insights */}
           {result.ai_insights && (

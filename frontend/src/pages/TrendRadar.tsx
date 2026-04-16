@@ -7,6 +7,7 @@ import { runTrendRadar } from "../lib/api";
 import { PLATFORM_LABELS, PHASE_LABELS, PHASE_COLORS } from "../lib/utils";
 import RunButton from "../components/RunButton";
 import PlatformBadge from "../components/PlatformBadge";
+import ContentGeneratorPanel from "../components/ContentGeneratorPanel";
 
 const DEFAULT_KEYWORDS = ["AI", "新消费", "出海", "国潮", "社交电商"];
 const ALL_PLATFORMS = ["xhs", "douyin", "reddit", "google_trends"];
@@ -280,6 +281,9 @@ export default function TrendRadar() {
               ))}
             </div>
           </div>
+
+          {/* Content generation */}
+          <ContentGeneratorPanel reportId={result.report_id} />
 
           {/* AI Narrative */}
           {result.narrative?.executive_summary && (
