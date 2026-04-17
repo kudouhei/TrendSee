@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { runVerticalDeep } from "../lib/api";
 import { PLATFORM_LABELS, PHASE_LABELS, PHASE_COLORS } from "../lib/utils";
 import RunButton from "../components/RunButton";
+import PlatformGroupSelector from "../components/PlatformGroupSelector";
 
 const ALL_PLATFORMS = ["xhs", "douyin", "reddit", "google_trends"];
 
@@ -18,9 +19,6 @@ export default function VerticalDeep() {
     mutationFn: runVerticalDeep,
     onSuccess: (data) => { setResult(data); setActiveTab("report"); },
   });
-
-  const togglePlatform = (p: string) =>
-    setPlatforms((prev) => prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]);
 
   const handleRun = () => mutate({
     vertical,
@@ -60,21 +58,7 @@ export default function VerticalDeep() {
             />
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {ALL_PLATFORMS.map((p) => (
-            <button
-              key={p}
-              onClick={() => togglePlatform(p)}
-              className={`badge border cursor-pointer transition-all ${
-                platforms.includes(p)
-                  ? "bg-brand-50 text-brand-700 border-brand-200"
-                  : "bg-gray-50 text-gray-400 border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              {PLATFORM_LABELS[p]}
-            </button>
-          ))}
-        </div>
+        <PlatformGroupSelector selected={platforms} onChange={setPlatforms} />
         <div className="flex items-center gap-3">
           <span className="text-xs text-gray-500">输出格式：</span>
           {[

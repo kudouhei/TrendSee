@@ -7,6 +7,7 @@ import { runTrendRadar } from "../lib/api";
 import { PLATFORM_LABELS, PHASE_LABELS, PHASE_COLORS } from "../lib/utils";
 import RunButton from "../components/RunButton";
 import PlatformBadge from "../components/PlatformBadge";
+import PlatformGroupSelector from "../components/PlatformGroupSelector";
 import ContentGeneratorPanel from "../components/ContentGeneratorPanel";
 
 const DEFAULT_KEYWORDS = ["AI", "新消费", "出海", "国潮", "社交电商"];
@@ -42,9 +43,6 @@ export default function TrendRadar() {
     mutationFn: runTrendRadar,
     onSuccess: setResult,
   });
-
-  const togglePlatform = (p: string) =>
-    setPlatforms((prev) => prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]);
 
   const handleRun = () => {
     if (inputMode === "keyword") {
@@ -152,21 +150,7 @@ export default function TrendRadar() {
         )}
 
         {/* Platforms */}
-        <div className="flex flex-wrap gap-2">
-          {ALL_PLATFORMS.map((p) => (
-            <button
-              key={p}
-              onClick={() => togglePlatform(p)}
-              className={`badge border cursor-pointer transition-all ${
-                platforms.includes(p)
-                  ? "bg-brand-50 text-brand-700 border-brand-200"
-                  : "bg-gray-50 text-gray-400 border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              {PLATFORM_LABELS[p]}
-            </button>
-          ))}
-        </div>
+        <PlatformGroupSelector selected={platforms} onChange={setPlatforms} />
 
         {/* Period (only shown in keyword mode) */}
         {inputMode === "keyword" && (

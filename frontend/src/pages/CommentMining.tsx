@@ -6,6 +6,7 @@ import {
 import { runCommentMining } from "../lib/api";
 import { PLATFORM_LABELS } from "../lib/utils";
 import RunButton from "../components/RunButton";
+import PlatformGroupSelector from "../components/PlatformGroupSelector";
 import ContentGeneratorPanel from "../components/ContentGeneratorPanel";
 
 const SENTIMENT_COLORS: Record<string, string> = {
@@ -36,9 +37,6 @@ export default function CommentMining() {
     onSuccess: setResult,
   });
 
-  const togglePlatform = (p: string) =>
-    setPlatforms((prev) => prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]);
-
   const sentimentData = result
     ? Object.entries(result.sentiment_distribution || {}).map(([k, v]) => ({
         name: SENTIMENT_LABELS[k] || k,
@@ -66,21 +64,11 @@ export default function CommentMining() {
             placeholder="例如：年轻人躺平、新能源汽车、AI工具..."
           />
         </div>
-        <div className="flex flex-wrap gap-2">
-          {ALL_PLATFORMS.map((p) => (
-            <button
-              key={p}
-              onClick={() => togglePlatform(p)}
-              className={`badge border cursor-pointer transition-all ${
-                platforms.includes(p)
-                  ? "bg-brand-50 text-brand-700 border-brand-200"
-                  : "bg-gray-50 text-gray-400 border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              {PLATFORM_LABELS[p]}
-            </button>
-          ))}
-        </div>
+        <PlatformGroupSelector
+          selected={platforms}
+          onChange={setPlatforms}
+          available={ALL_PLATFORMS}
+        />
         <RunButton onClick={() => mutate({ topic, platforms, limit_per_source: 30 })} loading={isPending} />
       </div>
 

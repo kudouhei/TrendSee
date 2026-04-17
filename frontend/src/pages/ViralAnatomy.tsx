@@ -4,6 +4,7 @@ import { runViralAnatomy } from "../lib/api";
 import { PLATFORM_LABELS, formatNum } from "../lib/utils";
 import RunButton from "../components/RunButton";
 import PlatformBadge from "../components/PlatformBadge";
+import PlatformGroupSelector from "../components/PlatformGroupSelector";
 import ContentGeneratorPanel from "../components/ContentGeneratorPanel";
 
 const ALL_PLATFORMS = ["xhs", "douyin"];
@@ -17,9 +18,6 @@ export default function ViralAnatomy() {
     mutationFn: runViralAnatomy,
     onSuccess: setResult,
   });
-
-  const togglePlatform = (p: string) =>
-    setPlatforms((prev) => prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]);
 
   return (
     <div className="space-y-6">
@@ -39,21 +37,11 @@ export default function ViralAnatomy() {
             placeholder="例如：减肥、副业、考研..."
           />
         </div>
-        <div className="flex flex-wrap gap-2">
-          {ALL_PLATFORMS.map((p) => (
-            <button
-              key={p}
-              onClick={() => togglePlatform(p)}
-              className={`badge border cursor-pointer transition-all ${
-                platforms.includes(p)
-                  ? "bg-brand-50 text-brand-700 border-brand-200"
-                  : "bg-gray-50 text-gray-400 border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              {PLATFORM_LABELS[p]}
-            </button>
-          ))}
-        </div>
+        <PlatformGroupSelector
+          selected={platforms}
+          onChange={setPlatforms}
+          available={ALL_PLATFORMS}
+        />
         <RunButton onClick={() => mutate({ topic, platforms, limit_per_source: 20 })} loading={isPending} />
       </div>
 
