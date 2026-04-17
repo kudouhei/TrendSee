@@ -4,7 +4,7 @@
  * from any module report. Drop it anywhere you have a report_id.
  */
 import { useState } from "react";
-import { generateContent, getReportContent, GeneratedContent } from "../lib/api";
+import { generateContent, getReportContent, type GeneratedContent } from "../lib/api";
 
 interface Props {
   reportId: number | null | undefined;
