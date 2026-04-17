@@ -1,5 +1,10 @@
+from pathlib import Path
 from pydantic_settings import BaseSettings
 from typing import List, Literal
+
+# config.py 位于 backend/app/core/，向上三级到达项目根目录
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]
+_ENV_FILE = str(_PROJECT_ROOT / ".env")
 
 
 class Settings(BaseSettings):
@@ -44,7 +49,7 @@ class Settings(BaseSettings):
     HTTPS_PROXY: str = ""
 
     class Config:
-        env_file = ".env"
+        env_file = _ENV_FILE
         case_sensitive = True
 
 
